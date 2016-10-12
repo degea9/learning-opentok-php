@@ -35,7 +35,7 @@ $app = new Slim(array(
 ));
 
 // Intialize storage interface wrapper, store it in a singleton
-$app->container->singleton('storage', function() use ($app) {
+/*$app->container->singleton('storage', function() use ($app) {
     // If the SLIM_MODE environment variable is set to 'production' (like on Heroku) the APC is used as 
     // the storage backed. Otherwise (like running locally) the filesystem is used as the storage 
     // backend.
@@ -47,7 +47,7 @@ $app->container->singleton('storage', function() use ($app) {
         $storage = new FileStorage('storage');
     }
     return $storage;
-});
+});*/
 
 // Initialize OpenTok instance, store it in the app contianer
 $app->container->singleton('opentok', function () {
@@ -58,7 +58,7 @@ $app->container->singleton('opentok', function () {
 $app->apiKey = getenv('API_KEY');
 
 // If a sessionId has already been created, retrieve it from the storage
-$app->container->singleton('sessionId', function() use ($app) {
+/*$app->container->singleton('sessionId', function() use ($app) {
     if ($app->storage->exists('sessionId')) {
         return $app->storage->retrieve('sessionId');
     }
@@ -68,16 +68,34 @@ $app->container->singleton('sessionId', function() use ($app) {
     ));
     $app->storage->store('sessionId', $session->getSessionId());
     return $session->getSessionId();
-});
+});*/
 
 // Route to return the SessionID and token as a json
 $app->get('/session', 'cors', function () use ($app) {
-
-    $token = $app->opentok->generateToken($app->sessionId);
+    $session = $app->opentok->createSession(array(
+        'mediaMode' => MediaMode::ROUTED
+    ));
+    $sessionId = $session->getSessionId();
+    $token = $app->opentok->generateToken($sessionId);
 
     $responseData = array(
         'apiKey' => $app->apiKey,
-        'sessionId' => $app->sessionId,
+        'sessionId' => $sessionId,
+        'token'=>$token
+    );
+
+    $app->response->headers->set('Content-Type', 'application/json');
+    echo json_encode($responseData);
+});
+
+//generate token with specific sessionID
+$app->get('/generatetoken/:sessionId', 'cors', function ($sessionId) use ($app) {
+
+    $token = $app->opentok->generateToken($sessionId);
+
+    $responseData = array(
+        'apiKey' => $app->apiKey,
+        'sessionId' => $sessionId,
         'token'=>$token
     );
 
