@@ -88,6 +88,24 @@ $app->get('/session', 'cors', function () use ($app) {
     echo json_encode($responseData);
 });
 
+//relay media mode
+$app->get('/session/mode/relay', 'cors', function () use ($app) {
+    $session = $app->opentok->createSession(array(
+        'mediaMode' => MediaMode::RELAYED
+    ));
+    $sessionId = $session->getSessionId();
+    $token = $app->opentok->generateToken($sessionId);
+
+    $responseData = array(
+        'apiKey' => $app->apiKey,
+        'sessionId' => $sessionId,
+        'token'=>$token
+    );
+
+    $app->response->headers->set('Content-Type', 'application/json');
+    echo json_encode($responseData);
+});
+
 //generate token with specific sessionID
 $app->get('/generatetoken/:sessionId', 'cors', function ($sessionId) use ($app) {
 
